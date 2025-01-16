@@ -15,6 +15,27 @@ TIMER_STATE_FILE = Path("/tmp/timer_state.json")
 
 def start_timer(seconds):
     """Start the timer and save its state."""
+    # Check if a timer is already active
+    if TIMER_STATE_FILE.exists():
+        with TIMER_STATE_FILE.open("r") as f:
+            timer_state = json.load(f)
+        
+        # Check if the current timer has already ended
+        start_time = timer_state["start_time"]
+        duration = timer_state["duration"]
+        elapsed = time.time() - start_time
+        remaining = duration - elapsed
+
+        if remaining > 0:
+            mins, secs = divmod(int(remaining), 60)
+            hrs, mins = divmod(mins, 60)
+            print(f"A timer is already active with {hrs:02}:{mins:02}:{secs:02} remaining.")
+            print("Please kill the current timer before starting a new one.")
+            sys.exit(1)
+        else:
+            # Timer has ended, clean up the state file
+            TIMER_STATE_FILE.unlink()
+
     # Record the start time and duration
     start_time = time.time()
     timer_state = {
