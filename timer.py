@@ -45,7 +45,7 @@ def start_timer(seconds):
 
     script = (
         f"import time, os; time.sleep({seconds}); "
-        f"os.system(\"zenity --info --title='Timer Alert' --text='TIME IS UP!' --width=300 --height=200\")"
+        f"os.system(\"zenity --info --title='Timer Alert' --text='TIME IS UP!' --width=500 --height=500\")"
     )
 
     # Run the timer script as a background process
