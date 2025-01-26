@@ -8,17 +8,20 @@ import os
 from pathlib import Path
 import subprocess
 import signal
+from typing import TypeAlias
+
+TimerState: TypeAlias = dict[str, int | float]
 
 # File to store the timer state
 TIMER_STATE_FILE = Path("/tmp/timer_state.json")
 
 
-def start_timer(seconds):
+def start_timer(seconds: int):
     """Start the timer and save its state."""
     # Check if a timer is already active
     if TIMER_STATE_FILE.exists():
         with TIMER_STATE_FILE.open("r") as f:
-            timer_state = json.load(f)
+            timer_state: TimerState = json.load(f)
         
         # Check if the current timer has already ended
         start_time = timer_state["start_time"]
@@ -74,7 +77,7 @@ def check_timer():
 
     # Load the timer state
     with TIMER_STATE_FILE.open("r") as f:
-        timer_state = json.load(f)
+        timer_state: TimerState = json.load(f)
 
     # Calculate remaining time
     start_time = timer_state["start_time"]
@@ -101,10 +104,14 @@ def kill_timer():
 
     # Load the timer state
     with TIMER_STATE_FILE.open("r") as f:
-        timer_state = json.load(f)
+        timer_state: TimerState = json.load(f)
 
     # Get the process ID
     pid = timer_state.get("pid")
+    if not isinstance(pid, int):
+        TIMER_STATE_FILE.unlink()
+        raise Exception("Process ID is not int")
+
     if not pid:
         print("No process ID found. Timer may have already ended.")
         TIMER_STATE_FILE.unlink()
@@ -125,27 +132,34 @@ def kill_timer():
 
 def main():
     parser = argparse.ArgumentParser(description="Set a timer with desktop notifications.")
-    parser.add_argument(
+    _= parser.add_argument(
         "-s", "--seconds", type=int, default=0, help="Number of seconds for the timer."
     )
-    parser.add_argument(
+    _ =parser.add_argument(
         "-m", "--minutes", type=int, default=0, help="Number of minutes for the timer."
     )
-    parser.add_argument(
+    _ = parser.add_argument(
         "-hr", "--hours", type=int, default=0, help="Number of hours for the timer."
     )
-    parser.add_argument(
+    _ = parser.add_argument(
         "-c", "--check",
-        action="store_true",
+        nargs="?", const=True, default=None,
         help="Check the remaining time for the current timer."
     )
-    parser.add_argument(
+    _ = parser.add_argument(
         "-k", "--kill",
-        action="store_true",
+        nargs="?", const=True, default=None,
         help="Kill the active timer."
     )
+    
+    class NameSpace:
+        seconds: int = 0
+        minutes: int = 0
+        hours: int = 0
+        check: bool  = False
+        kill: bool  = False
 
-    args = parser.parse_args()
+    args = parser.parse_args(namespace=NameSpace)
 
     if args.check:
         check_timer()
